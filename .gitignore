@@ -1,0 +1,29 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+env.js
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+secrets/
+
+# Dependency and build outputs
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs and OS artifacts
+*.log
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/

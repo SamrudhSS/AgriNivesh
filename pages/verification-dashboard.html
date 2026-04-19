@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farmer Verification Dashboard | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header class="dash-topbar">
+    <div class="onb-brand">Editorial Agritech</div>
+    <nav>
+      <a href="verification-dashboard.html" class="active">Farmers</a>
+      <a href="#">Investments</a>
+      <a href="#">Market</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-ghost" type="button">Logout</button>
+  </header>
+
+  <main class="dash-main">
+    <section class="dash-hero card">
+      <div>
+        <p class="tiny">Verification Workspace</p>
+        <h1>Farmer Verification Dashboard</h1>
+        <p id="dashWelcome">Loading profile...</p>
+      </div>
+      <div class="dash-status" id="dashStatus">Status: Pending</div>
+    </section>
+
+    <section class="dash-grid">
+      <article class="card">
+        <h3>Contact Snapshot</h3>
+        <dl id="dashContact"></dl>
+      </article>
+      <article class="card">
+        <h3>Farm Snapshot</h3>
+        <dl id="dashFarm"></dl>
+      </article>
+      <article class="card">
+        <h3>Document Snapshot</h3>
+        <ul id="dashDocs" class="summary-list"></ul>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="../js/verification-dashboard.js"></script>
+</body>
+</html>

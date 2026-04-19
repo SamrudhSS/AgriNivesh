@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding - Farm Location | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <nav class="onb-topnav">
+    <div class="onb-brand">Editorial Agritech</div>
+    <div class="onb-actions">
+      <button class="onb-icon-btn" type="button">notifications</button>
+      <button class="onb-icon-btn" type="button">help_outline</button>
+      <button id="logoutBtn" class="link-btn" type="button" aria-label="Logout">Logout</button>
+      <div class="onb-avatar-wrap"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4ldBqJn2sNbdgFJzIxiMZh8ObAC29JCb3nLWUqgbYl4Q8NoQlgfEYIO2QMXQ10e9-gxEhlnZ9A8a5T3vb86JOLNPeNuX-WdoelxxSzf-IicPdgj2sGxrMpPLErae-xPRUn5WVzESwk_ZCu_2FnxRimugS6mow7EoQkEy1-zYAohD9PlcYuZm4wRJ3cRkubH66hSkRwjfkZIKF_5mu_ryMQXfd0iStt-T8v4wS5hr9V4xwNgKdp6Nt0Ko4MQUz6IiwQAeHEll7Rv0" alt="Profile" /></div>
+    </div>
+  </nav>
+
+  <aside class="onb-sidebar">
+    <div class="onb-sidebar-head">
+      <h2>Onboarding</h2>
+      <p>Digital Cultivator Profile</p>
+    </div>
+    <nav class="onb-menu">
+      <a href="onboarding-contact.html"><span class="material-symbols-outlined">contact_page</span>Contact Details</a>
+      <a class="active" href="onboarding-location.html"><span class="material-symbols-outlined">distance</span>Farm Location</a>
+      <a href="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span>Documents</a>
+      <a href="onboarding-review.html"><span class="material-symbols-outlined">assignment_turned_in</span>Review &amp; Submit</a>
+    </nav>
+    <button id="saveLocationBtn" class="btn btn-primary" type="button">Save Progress</button>
+  </aside>
+
+  <main class="onb-main">
+    <div class="onb-wrap">
+      <header class="onb-header">
+        <span class="step-pill">Step 2 of 4</span>
+        <h1>Mapping Your <span>Heritage &amp; Harvest</span></h1>
+        <p>Accurate location data helps us optimize your yield predictions and connect you with local cooperatives.</p>
+      </header>
+
+      <form id="onboardingLocationForm" class="location-layout" novalidate>
+        <section class="card">
+          <div class="location-grid">
+            <div>
+              <label for="farmName">Institutional Name</label>
+              <input id="farmName" type="text" placeholder="e.g. Green Valley Estates" />
+              <p class="error" id="farmNameError"></p>
+            </div>
+            <div>
+              <label for="farmState">State</label>
+              <select id="farmState">
+                <option value="">Select State</option>
+                <option value="Goa">Goa</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Punjab">Punjab</option>
+              </select>
+              <p class="error" id="farmStateError"></p>
+            </div>
+            <div>
+              <label for="farmDistrict">District</label>
+              <input id="farmDistrict" type="text" placeholder="Enter district" />
+              <p class="error" id="farmDistrictError"></p>
+            </div>
+            <div>
+              <label for="farmCrop">Primary Crop</label>
+              <input id="farmCrop" type="text" placeholder="e.g. Rice, Coffee" />
+              <p class="error" id="farmCropError"></p>
+            </div>
+            <div>
+              <label for="farmAcreage">Total Acreage (hectares)</label>
+              <input id="farmAcreage" type="number" min="0" step="0.1" placeholder="14.5" />
+              <p class="error" id="farmAcreageError"></p>
+            </div>
+            <div>
+              <label for="farmLatitude">Latitude</label>
+              <input id="farmLatitude" type="text" placeholder="15.2993" />
+              <p class="error" id="farmLatitudeError"></p>
+            </div>
+            <div>
+              <label for="farmLongitude">Longitude</label>
+              <input id="farmLongitude" type="text" placeholder="74.1240" />
+              <p class="error" id="farmLongitudeError"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card map-card">
+          <div class="map-head">
+            <div>
+              <h3>Geospatial Positioning</h3>
+              <p>Verify the exact boundaries of your cultivation zones.</p>
+            </div>
+            <button id="autodetectBtn" class="btn btn-ghost" type="button">Auto-Detect</button>
+          </div>
+          <div class="map-visual">
+            <div id="farmMap" aria-label="Interactive map for farm location"></div>
+          </div>
+        </section>
+      </form>
+
+      <footer class="onb-footer">
+        <div class="progress-wrap">
+          <div class="progress-track"><span class="progress-fill progress-50"></span></div>
+          <span>50% Complete</span>
+        </div>
+        <div class="footer-actions">
+          <button id="locationBackBtn" type="button" class="btn btn-ghost">Back</button>
+          <button id="locationContinueBtn" type="button" class="btn btn-primary">Continue</button>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <nav class="onb-mobile-nav">
+    <button type="button" data-go="onboarding-contact.html"><span class="material-symbols-outlined">contact_page</span><span>Contact</span></button>
+    <button type="button" class="active"><span class="material-symbols-outlined">distance</span><span>Location</span></button>
+    <button type="button" data-go="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span><span>Files</span></button>
+    <button type="button" data-go="onboarding-review.html"><span class="material-symbols-outlined">assignment_turned_in</span><span>Review</span></button>
+  </nav>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script type="module" src="../js/onboarding-location.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding - Review & Submit | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <nav class="onb-topnav">
+    <div class="onb-brand">Editorial Agritech</div>
+    <div class="onb-actions">
+      <button class="onb-icon-btn" type="button">notifications</button>
+      <button class="onb-icon-btn" type="button">help_outline</button>
+      <button id="logoutBtn" class="link-btn" type="button" aria-label="Logout">Logout</button>
+      <div class="onb-avatar-wrap"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA5Cc4U9qMgROdOHsA0X6J4p8QERzMoZgpAs64qQTiNRk5i7wSt6J8tbb2HbNvOa2BE5wrDSS5zEQlw7zay4OPxtkQnQV0efxFeIbRi2LjHu3OcQHBZfwD0hz5K_k0J7D0iZr_HziyqaDr6NddpFLksfbXfmuq26kLWmIPyqnZ3xSUq2qfch3WC3x58HxEYHPsDR3EfmMMwLbdNR4NKJbfBcU_03qOGAfXppfGykTWSNhFNxReJWpEEma2cHB12MrlAlmL977Of5g" alt="Profile" /></div>
+    </div>
+  </nav>
+
+  <aside class="onb-sidebar">
+    <div class="onb-sidebar-head">
+      <h2>Onboarding</h2>
+      <p>Digital Cultivator Profile</p>
+    </div>
+    <nav class="onb-menu">
+      <a href="onboarding-contact.html"><span class="material-symbols-outlined">contact_page</span>Contact Details</a>
+      <a href="onboarding-location.html"><span class="material-symbols-outlined">distance</span>Farm Location</a>
+      <a href="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span>Documents</a>
+      <a class="active" href="onboarding-review.html"><span class="material-symbols-outlined">assignment_turned_in</span>Review &amp; Submit</a>
+    </nav>
+    <button id="saveReviewBtn" class="btn btn-primary" type="button">Save Progress</button>
+  </aside>
+
+  <main class="onb-main">
+    <div class="onb-wrap">
+      <header class="onb-header">
+        <span class="step-pill">Step 4 of 4</span>
+        <h1>Application <span>Review</span></h1>
+        <p>Confirm your details to finalize your profile. This information is used for yield forecasting and credit scoring.</p>
+      </header>
+
+      <div class="review-grid">
+        <section class="card summary-card">
+          <h3>Identity &amp; Contact</h3>
+          <dl id="summaryContact"></dl>
+        </section>
+
+        <section class="card summary-card">
+          <h3>Farm Location</h3>
+          <dl id="summaryLocation"></dl>
+        </section>
+
+        <section class="card summary-card full">
+          <h3>Document Status</h3>
+          <ul id="summaryDocuments" class="summary-list"></ul>
+        </section>
+      </div>
+
+      <label class="checkbox-inline terms review-check">
+        <input id="reviewConfirm" type="checkbox" />
+        <span>I confirm all details are accurate and agree to submit this application.</span>
+      </label>
+      <p class="error" id="reviewConfirmError"></p>
+
+      <footer class="onb-footer">
+        <div class="progress-wrap">
+          <div class="progress-track"><span class="progress-fill progress-100"></span></div>
+          <span>100% Ready</span>
+        </div>
+        <div class="footer-actions">
+          <button id="reviewBackBtn" type="button" class="btn btn-ghost">Back</button>
+          <button id="submitApplicationBtn" type="button" class="btn btn-primary">Submit Application</button>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <nav class="onb-mobile-nav">
+    <button type="button" data-go="onboarding-contact.html"><span class="material-symbols-outlined">contact_page</span><span>Contact</span></button>
+    <button type="button" data-go="onboarding-location.html"><span class="material-symbols-outlined">distance</span><span>Location</span></button>
+    <button type="button" data-go="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span><span>Files</span></button>
+    <button type="button" class="active"><span class="material-symbols-outlined">assignment_turned_in</span><span>Review</span></button>
+  </nav>
+
+  <script type="module" src="../js/onboarding-review.js"></script>
+</body>
+</html>

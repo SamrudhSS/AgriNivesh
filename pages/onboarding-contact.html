@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding - Contact Info | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <nav class="onb-topnav">
+    <div class="onb-brand">Editorial Agritech</div>
+    <div class="onb-actions">
+      <button class="onb-icon-btn" type="button" aria-label="Notifications">notifications</button>
+      <button class="onb-icon-btn" type="button" aria-label="Help">help_outline</button>
+      <button id="logoutBtn" class="link-btn" type="button" aria-label="Logout">Logout</button>
+      <div class="onb-avatar-wrap">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo3AW5y6TUX8yMdGa6uvQQA4jOamDfQuFX6iSvBZfVefLZ2QH1kXx-zVOtrwdLKaZCy9x4FbXWhUdnKviMzOoiZgkborwl-7qs-bhpZy0TBs5JNXTX9De8BupkKwDcS88BB2VQsdB61TZ7U1j0__W-Hoh5Op6jnjd-dlHZprjykzpVf87iIesBWfY93C3O9GdAzXdbnAc4-5ed3LhzRGKyMyvWKOGlI-Hqw1uEBb14f_BonyY6nuzRGCeA2BAT9gU6-1H11KqBpR8" alt="Profile" />
+      </div>
+    </div>
+  </nav>
+
+  <aside class="onb-sidebar" aria-label="Onboarding sidebar">
+    <div class="onb-sidebar-head">
+      <h2>Onboarding</h2>
+      <p>Digital Cultivator Profile</p>
+    </div>
+    <nav class="onb-menu">
+      <a class="active" href="onboarding-contact.html"><span class="material-symbols-outlined">contact_page</span>Contact Details</a>
+      <a href="onboarding-location.html"><span class="material-symbols-outlined">distance</span>Farm Location</a>
+      <a href="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span>Documents</a>
+      <a href="onboarding-review.html"><span class="material-symbols-outlined">assignment_turned_in</span>Review &amp; Submit</a>
+    </nav>
+    <button id="saveProgressBtn" class="btn btn-primary" type="button">Save Progress</button>
+  </aside>
+
+  <main class="onb-main">
+    <div class="onb-wrap">
+      <header class="onb-header">
+        <span class="step-pill">Step 1 of 4</span>
+        <h1>Establishing Your <span>Digital Roots</span></h1>
+        <p>
+          To ensure secure management of your agricultural assets and seamless harvest
+          coordination, please provide your primary contact details.
+        </p>
+      </header>
+
+      <div class="onb-grid">
+        <section class="onb-form-panels">
+          <form id="onboardingContactForm" novalidate>
+            <div class="card">
+              <div class="onb-fields">
+                <div>
+                  <label for="primaryMobile">Mobile Number</label>
+                  <div class="icon-input left-icon">
+                    <span class="material-symbols-outlined">smartphone</span>
+                    <input id="primaryMobile" type="tel" placeholder="+1 (555) 000-0000" />
+                  </div>
+                  <p class="hint">Used for vital crop alerts and security codes.</p>
+                  <p class="error" id="primaryMobileError"></p>
+                </div>
+
+                <div>
+                  <label for="primaryEmail">Email Address</label>
+                  <div class="icon-input left-icon">
+                    <span class="material-symbols-outlined">mail</span>
+                    <input id="primaryEmail" type="email" placeholder="farmer@estate.com" />
+                  </div>
+                  <p class="hint">For monthly harvest reports and investment updates.</p>
+                  <p class="error" id="primaryEmailError"></p>
+                </div>
+
+                <div class="field-full">
+                  <label for="secondaryContact">Alternative Contact (Secondary Line)</label>
+                  <div class="icon-input left-icon">
+                    <span class="material-symbols-outlined">phone_in_talk</span>
+                    <input id="secondaryContact" type="tel" placeholder="Landline or secondary mobile" />
+                  </div>
+                  <p class="error" id="secondaryContactError"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Preferred Communication Method</h3>
+              <div class="method-grid" role="radiogroup" aria-label="Preferred communication method">
+                <label class="method-card">
+                  <input type="radio" name="commMethod" value="whatsapp" />
+                  <span class="material-symbols-outlined">chat</span>
+                  <span>WhatsApp</span>
+                </label>
+                <label class="method-card">
+                  <input type="radio" name="commMethod" value="sms" checked />
+                  <span class="material-symbols-outlined">sms</span>
+                  <span>Direct SMS</span>
+                </label>
+                <label class="method-card">
+                  <input type="radio" name="commMethod" value="call" />
+                  <span class="material-symbols-outlined">call</span>
+                  <span>Voice Call</span>
+                </label>
+              </div>
+              <p class="error" id="commMethodError"></p>
+            </div>
+          </form>
+        </section>
+
+        <aside class="onb-aside">
+          <div class="security-card">
+            <span class="material-symbols-outlined">verified_user</span>
+            <h3>Data Sovereignty &amp; Security</h3>
+            <p>
+              Your contact information is encrypted and only used for operational logistics.
+              We never share farmer data with third-party marketers.
+            </p>
+          </div>
+
+          <div class="network-card">
+            <div class="network-visual">
+              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDibefv6mB8ifGvIMpBXs0Ot7W4GI81Vay_FMvOhLm944vLJAFwBcyT0jVWsXklGyc21y8gKaleM758bty_ieix2rBvbODJyCXNOtFs4ACWUx_5OOJTuTOwTfJU8Su0GKOLeKpAq1gEb9rzEZjb9wJ8zh4mmZThoyEMqOA8nHD1PHL7IJNPAFzeRQxtuJh7aAIosCEAmVOSl26K44y9z8FGvCyQ3NZiunKQYEJpZNHHco4sD7Oq01JptNv8xHkzv27cclhJxbnJaKw" alt="Network status" />
+            </div>
+            <h4>Network Status</h4>
+            <p>Connecting the Digital Cultivator to global ag-markets, one verifiable entry at a time.</p>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="onb-footer">
+        <div class="progress-wrap">
+          <div class="progress-track"><span class="progress-fill"></span></div>
+          <span>25% Complete</span>
+        </div>
+        <div class="footer-actions">
+          <button id="backBtn" type="button" class="btn btn-ghost">Back</button>
+          <button id="continueBtn" type="button" class="btn btn-primary">Continue</button>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <nav class="onb-mobile-nav" aria-label="Mobile onboarding navigation">
+    <button type="button" class="active"><span class="material-symbols-outlined">contact_page</span><span>Contact</span></button>
+    <button type="button" data-go="onboarding-location.html"><span class="material-symbols-outlined">distance</span><span>Location</span></button>
+    <button type="button" data-go="onboarding-documents.html"><span class="material-symbols-outlined">upload_file</span><span>Files</span></button>
+    <button type="button" data-go="onboarding-review.html"><span class="material-symbols-outlined">assignment_turned_in</span><span>Review</span></button>
+  </nav>
+
+  <script type="module" src="../js/onboarding-contact.js"></script>
+</body>
+</html>

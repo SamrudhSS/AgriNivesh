@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="hero hero-login">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYxRT58sKsbgFx7rJq3lZViyb9zojEq4zZoJxS0ADSi_dtLCkpRgLohfvIsvesBPIuOSEbzuz8SI9Q-99HF00d7YGWxRm1VmNXbnwbVXt43MVQyIpeg0k7wrMJmwNADzD4wRnOPf-4co9o4wbMdaV2a8vYLl17Hu-IBdKLn4VsHC6xpQBkZRKI-BURKQsa_8sgu3na3OoJsDnqdfjMQe2KiZ5TEsztpWNvGC-IjvBG9JLc-hBKNEnUQTLTPSubBQ0YpmLcYnDLpkI" alt="Wheat field at sunrise" class="hero-image" />
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <h1>Empowering Farmers, Attracting Investors</h1>
+        <p>Unlocking the potential of agricultural assets through AI-driven insights and sustainable financial growth.</p>
+        <div class="hero-tag">
+          <span class="line"></span>
+          <span>THE FUTURE OF AGRITECH</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-card">
+        <h2 class="brand">AgriInvest AI</h2>
+
+        <div class="tabs tabs-pill">
+          <a class="tab active" href="index.html">Login</a>
+          <a class="tab" href="register.html">Register</a>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <label>Email or Phone Number</label>
+          <div class="input-wrap">
+            <input id="loginIdentity" type="text" placeholder="name@farm.com" />
+            <span class="input-icon">@</span>
+          </div>
+          <p class="error" id="loginIdentityError"></p>
+
+          <label>Password</label>
+          <div class="input-wrap">
+            <input id="loginPassword" type="password" placeholder="••••••••" />
+            <button type="button" id="loginPasswordToggle" class="icon-btn" aria-label="Toggle password visibility">👁</button>
+          </div>
+          <p class="error" id="loginPasswordError"></p>
+
+          <div class="row between center-v gap-sm">
+            <label class="checkbox-inline">
+              <input id="rememberMe" type="checkbox" />
+              <span>Remember Me</span>
+            </label>
+            <button type="button" class="link-btn" id="forgotPasswordBtn">Forgot Password?</button>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Login to Account</button>
+        </form>
+
+        <div class="divider"><span>OR CONTINUE WITH</span></div>
+
+        <button type="button" class="btn btn-google" id="googleLoginBtn">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" />
+          <span>Sign in with Google</span>
+        </button>
+
+        <p class="fineprint">© 2026 AGRIINVEST AI. <a href="#">PRIVACY POLICY</a></p>
+      </div>
+    </section>
+  </main>
+
+  <div class="kyc-badge">KYC SECURED PLATFORM</div>
+
+  <script type="module" src="../js/login.js"></script>
+</body>
+</html>

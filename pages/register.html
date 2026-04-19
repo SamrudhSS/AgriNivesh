@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="hero hero-register">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8tD3LnY3N3MKe2cogRHBkfzA_8klbKBpU49pqz_ciYvm1-eKKZE8ZX6ul8bIZC_NxAHAi2urLNkdaYnxKSjhD8aML2KIp-iwI2rY0ybSEPfFIBjNCt4gYZbo8mCrAxpSp8ef4pyDOG39kiK2tUhLRDRj63eerpgeRsijbkw4RzLiRxTF6CzkGUxIahKAXxCO9tWn6jNmwFcJhcjgLyS-zzUbao3mQ9odBmJ31lJgY3cgmarQnM8vFeDWBm-eHtiaDXokyUzVTvMQ" alt="Terraced rice fields" class="hero-image" />
+      <div class="hero-overlay hero-overlay-green"></div>
+      <div class="hero-content">
+        <span class="pill">NOW LIVE</span>
+        <h1>Empowering Farmers, Attracting Investors</h1>
+        <p>The world's first AI-driven agricultural investment ecosystem designed for sustainable growth and verified yields.</p>
+        <div class="stats">
+          <div><strong>12k+</strong><span>FARMERS ACTIVE</span></div>
+          <div><strong>$45M</strong><span>INVESTED CAPITAL</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-card">
+        <div class="brand-row">
+          <span class="leaf">🌿</span>
+          <h2 class="brand">AgriNivesh</h2>
+        </div>
+        <p class="subtitle">Join the digital revolution in agriculture.</p>
+
+        <div class="tabs tabs-line">
+          <a class="tab" href="index.html">Login</a>
+          <a class="tab active" href="register.html">Register</a>
+        </div>
+
+        <form id="registerForm" novalidate>
+          <label class="micro">SELECT YOUR ROLE</label>
+          <div class="roles" id="roleGroup">
+            <button type="button" class="role-card selected" data-role="Farmer">Farmer</button>
+            <button type="button" class="role-card" data-role="Investor">Investor</button>
+          </div>
+
+          <label class="micro" for="regFullName">FULL NAME</label>
+          <input id="regFullName" type="text" placeholder="John Doe" />
+          <p class="error" id="regFullNameError"></p>
+
+          <label class="micro">PHONE NUMBER</label>
+          <div class="row gap-sm">
+            <select id="regCountryCode" class="code-select" aria-label="Country code">
+              <option value="+1">+1</option>
+              <option value="+91">+91</option>
+              <option value="+44">+44</option>
+              <option value="+254">+254</option>
+            </select>
+            <input id="regPhone" type="tel" placeholder="812 345 6789" />
+          </div>
+          <p class="error" id="regPhoneError"></p>
+
+          <label class="micro" for="regEmail">EMAIL ADDRESS</label>
+          <input id="regEmail" type="email" placeholder="john@example.com" />
+          <p class="error" id="regEmailError"></p>
+
+          <label class="micro" for="regPassword">CREATE PASSWORD</label>
+          <div class="input-wrap">
+            <input id="regPassword" type="password" placeholder="••••••••" />
+            <button type="button" id="regPasswordToggle" class="icon-btn" aria-label="Toggle password visibility">👁</button>
+          </div>
+          <p class="error" id="regPasswordError"></p>
+
+          <div class="strength-row">
+            <div class="strength-bars">
+              <span id="bar1"></span><span id="bar2"></span><span id="bar3"></span><span id="bar4"></span>
+            </div>
+            <span id="strengthLabel" class="strength-label">WEAK</span>
+          </div>
+
+          <label class="micro" for="regConfirmPassword">CONFIRM PASSWORD</label>
+          <div class="input-wrap">
+            <input id="regConfirmPassword" type="password" placeholder="••••••••" />
+            <button type="button" id="regConfirmPasswordToggle" class="icon-btn" aria-label="Toggle confirm password visibility">👁</button>
+          </div>
+          <p class="error" id="regConfirmPasswordError"></p>
+
+          <label class="checkbox-inline terms">
+            <input id="regTerms" type="checkbox" />
+            <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</span>
+          </label>
+          <p class="error" id="regTermsError"></p>
+
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+
+        <p class="fineprint">© 2026 AGRINIVESH. CULTIVATING FINANCIAL GROWTH.</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/register.js"></script>
+</body>
+</html>
