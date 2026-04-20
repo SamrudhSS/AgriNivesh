@@ -1,10 +1,15 @@
 import { showToast, clearError, setError } from "./common.js";
 import {
-  saveOnboardingDocuments,
-  getCurrentUserProfile,
-  signOutUser,
-  mapFirebaseError,
-} from "./firebase.js";
+  ONBOARDING_BASE_KEYS,
+  getScopedDraft,
+  setScopedDraft,
+  setActiveSession,
+  getActiveRole,
+  isAdmin,
+  isInvestor,
+  routeByRole,
+  clearActiveSession,
+} from "./session.js";
 
 (function initOnboardingDocuments() {
   const form = document.getElementById("onboardingDocumentsForm");
@@ -20,7 +25,120 @@ import {
   const backBtn = document.getElementById("documentsBackBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  const LS_KEY = "agriinvest.onboarding.documents";
+  let saveOnboardingDocuments = null;
+  let getCurrentUserProfile = null;
+  let getCurrentUser = null;
+  let signOutUser = null;
+  let mapFirebaseError = null;
+
+  const BASE_KEY = ONBOARDING_BASE_KEYS.documents;
+  const CONTACT_BASE_KEY = ONBOARDING_BASE_KEYS.contact;
+  const LOCATION_BASE_KEY = ONBOARDING_BASE_KEYS.location;
+  const REQUIRED_CONTACT_FIELDS = ["primaryMobile", "primaryEmail", "commMethod"];
+  const REQUIRED_LOCATION_FIELDS = [
+    "farmName",
+    "state",
+    "district",
+    "primaryCrop",
+    "acreageHectare",
+    "latitude",
+    "longitude",
+  ];
+
+  function parseLocalJson(baseKey) {
+    return getScopedDraft(baseKey);
+  }
+
+  function hasRequiredValues(data, fields) {
+    return fields.every((field) => String(data?.[field] ?? "").trim() !== "");
+  }
+
+  function guardStep1(data) {
+    return hasRequiredValues(data, REQUIRED_CONTACT_FIELDS);
+  }
+
+  function guardStep2(data) {
+    return hasRequiredValues(data, REQUIRED_LOCATION_FIELDS);
+  }
+
+  async function enforceFarmerAccess() {
+    const cachedRole = getActiveRole();
+    if (isInvestor(cachedRole) || isAdmin(cachedRole)) {
+      routeByRole(cachedRole);
+      return false;
+    }
+
+    if (!getCurrentUserProfile) {
+      return true;
+    }
+
+    try {
+      const profile = await getCurrentUserProfile();
+      const role = profile?.role || cachedRole;
+      const uid = getCurrentUser?.()?.uid;
+      if (uid) {
+        setActiveSession({ uid, role });
+      }
+
+      if (isInvestor(role) || isAdmin(role)) {
+        routeByRole(role);
+        return false;
+      }
+    } catch {
+      // allow local mode
+    }
+
+    return true;
+  }
+
+  async function enforceRouteGuard() {
+    const localContact = parseLocalJson(CONTACT_BASE_KEY);
+    const localLocation = parseLocalJson(LOCATION_BASE_KEY);
+
+    const step1Done = guardStep1(localContact);
+    const step2Done = guardStep2(localLocation);
+
+    if (step1Done && step2Done) {
+      return true;
+    }
+
+    if (getCurrentUserProfile) {
+      try {
+        const profile = await getCurrentUserProfile();
+        const cloudContact = profile?.onboarding?.step1ContactInfo || {};
+        const cloudLocation = profile?.onboarding?.step2FarmLocation || {};
+
+        const cloudStep1Done = guardStep1(cloudContact);
+        const cloudStep2Done = guardStep2(cloudLocation);
+
+        if (cloudStep1Done && cloudStep2Done) {
+          return true;
+        }
+
+        if (!cloudStep1Done) {
+          showToast("Please complete Contact Details first.");
+          window.location.href = "onboarding-contact.html";
+          return false;
+        }
+
+        showToast("Please complete Farm Location first.");
+        window.location.href = "onboarding-location.html";
+        return false;
+      } catch {
+        // fallback to local redirect logic below
+      }
+    }
+
+    if (!step1Done) {
+      showToast("Please complete Contact Details first.");
+      window.location.href = "onboarding-contact.html";
+      return false;
+    }
+
+    showToast("Please complete Farm Location first.");
+    window.location.href = "onboarding-location.html";
+    return false;
+  }
 
   function payload() {
     return {
@@ -62,14 +180,24 @@ import {
     return { valid, data };
   }
 
+  async function initFirebaseServices() {
+    try {
+      const firebase = await import("./firebase.js");
+      saveOnboardingDocuments = firebase.saveOnboardingDocuments;
+      getCurrentUserProfile = firebase.getCurrentUserProfile;
+      getCurrentUser = firebase.getCurrentUser;
+      signOutUser = firebase.signOutUser;
+      mapFirebaseError = firebase.mapFirebaseError;
+    } catch {
+      showToast("Cloud sync unavailable. You can still continue with local progress.");
+    }
+  }
+
   async function loadInitial() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      try {
-        hydrate(JSON.parse(raw));
-      } catch {
-        localStorage.removeItem(LS_KEY);
-      }
+    hydrate(parseLocalJson(BASE_KEY));
+
+    if (!getCurrentUserProfile) {
+      return;
     }
 
     try {
@@ -86,14 +214,19 @@ import {
     const { valid, data } = validate();
     if (!valid) return false;
 
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    setScopedDraft(BASE_KEY, data);
+
+    if (!saveOnboardingDocuments) {
+      showToast(mode === "continue" ? "Saved locally. Continuing." : "Progress saved locally.");
+      return true;
+    }
 
     try {
       await saveOnboardingDocuments(data);
       showToast(mode === "continue" ? "Documents saved. Continue to Review." : "Progress saved.");
       return true;
     } catch (error) {
-      showToast(mapFirebaseError(error));
+      showToast(mapFirebaseError ? mapFirebaseError(error) : "Unable to save to cloud right now.");
       return false;
     }
   }
@@ -135,11 +268,14 @@ import {
 
   logoutBtn?.addEventListener("click", async () => {
     logoutBtn.disabled = true;
-    try {
-      await signOutUser();
-    } catch {
-      // always redirect
+    if (signOutUser) {
+      try {
+        await signOutUser();
+      } catch {
+        // always redirect
+      }
     }
+    clearActiveSession();
     window.location.href = "index.html";
   });
 
@@ -150,5 +286,11 @@ import {
     });
   });
 
-  loadInitial();
+  initFirebaseServices().then(async () => {
+    const isFarmerAllowed = await enforceFarmerAccess();
+    if (!isFarmerAllowed) return;
+    const allowed = await enforceRouteGuard();
+    if (!allowed) return;
+    await loadInitial();
+  });
 })();

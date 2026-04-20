@@ -1,4 +1,15 @@
 import { showToast, clearError, setError } from "./common.js";
+import {
+  ONBOARDING_BASE_KEYS,
+  getScopedDraft,
+  setScopedDraft,
+  setActiveSession,
+  getActiveRole,
+  isAdmin,
+  isInvestor,
+  routeByRole,
+  clearActiveSession,
+} from "./session.js";
 
 (function initOnboardingLocation() {
   const form = document.getElementById("onboardingLocationForm");
@@ -22,16 +33,84 @@ import { showToast, clearError, setError } from "./common.js";
   const logoutBtn = document.getElementById("logoutBtn");
   const mapElement = document.getElementById("farmMap");
 
-  const LS_KEY = "agriinvest.onboarding.location";
+  const BASE_KEY = ONBOARDING_BASE_KEYS.location;
+  const CONTACT_BASE_KEY = ONBOARDING_BASE_KEYS.contact;
+  const REQUIRED_CONTACT_FIELDS = ["primaryMobile", "primaryEmail", "commMethod"];
 
   let saveOnboardingFarmLocation = null;
   let getCurrentUserProfile = null;
+  let getCurrentUser = null;
   let mapFirebaseError = null;
   let signOutUser = null;
 
   let map;
   let marker;
   const defaultCenter = [15.2993, 74.1240];
+
+  function parseLocalJson(baseKey) {
+    return getScopedDraft(baseKey);
+  }
+
+  function hasRequiredValues(data, fields) {
+    return fields.every((field) => String(data?.[field] ?? "").trim() !== "");
+  }
+
+  async function enforceFarmerAccess() {
+    const cachedRole = getActiveRole();
+    if (isInvestor(cachedRole) || isAdmin(cachedRole)) {
+      routeByRole(cachedRole);
+      return false;
+    }
+
+    if (!getCurrentUserProfile) {
+      return true;
+    }
+
+    try {
+      const profile = await getCurrentUserProfile();
+      const role = profile?.role || cachedRole;
+      const uid = getCurrentUser?.()?.uid;
+      if (uid) {
+        setActiveSession({ uid, role });
+      }
+
+      if (isInvestor(role) || isAdmin(role)) {
+        routeByRole(role);
+        return false;
+      }
+    } catch {
+      // allow local mode
+    }
+
+    return true;
+  }
+
+  async function enforceRouteGuard() {
+    const localContact = parseLocalJson(CONTACT_BASE_KEY);
+    if (hasRequiredValues(localContact, REQUIRED_CONTACT_FIELDS)) {
+      return true;
+    }
+
+    if (!getCurrentUserProfile) {
+      showToast("Please complete Contact Details first.");
+      window.location.href = "onboarding-contact.html";
+      return false;
+    }
+
+    try {
+      const profile = await getCurrentUserProfile();
+      const cloudContact = profile?.onboarding?.step1ContactInfo || {};
+      if (hasRequiredValues(cloudContact, REQUIRED_CONTACT_FIELDS)) {
+        return true;
+      }
+    } catch {
+      // fallback to redirect below
+    }
+
+    showToast("Please complete Contact Details first.");
+    window.location.href = "onboarding-contact.html";
+    return false;
+  }
 
   function initMap() {
     if (!mapElement || typeof window.L === "undefined") {
@@ -182,6 +261,7 @@ import { showToast, clearError, setError } from "./common.js";
       const firebase = await import("./firebase.js");
       saveOnboardingFarmLocation = firebase.saveOnboardingFarmLocation;
       getCurrentUserProfile = firebase.getCurrentUserProfile;
+      getCurrentUser = firebase.getCurrentUser;
       mapFirebaseError = firebase.mapFirebaseError;
       signOutUser = firebase.signOutUser;
     } catch {
@@ -190,14 +270,7 @@ import { showToast, clearError, setError } from "./common.js";
   }
 
   async function loadInitial() {
-    const draftRaw = localStorage.getItem(LS_KEY);
-    if (draftRaw) {
-      try {
-        hydrate(JSON.parse(draftRaw));
-      } catch {
-        localStorage.removeItem(LS_KEY);
-      }
-    }
+    hydrate(parseLocalJson(BASE_KEY));
 
     if (!getCurrentUserProfile) {
       return;
@@ -217,7 +290,7 @@ import { showToast, clearError, setError } from "./common.js";
     const { valid, data } = validate();
     if (!valid) return false;
 
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    setScopedDraft(BASE_KEY, data);
 
     if (!saveOnboardingFarmLocation) {
       showToast(
@@ -303,6 +376,7 @@ import { showToast, clearError, setError } from "./common.js";
         // continue redirect
       }
     }
+    clearActiveSession();
     window.location.href = "index.html";
   });
 
@@ -314,6 +388,12 @@ import { showToast, clearError, setError } from "./common.js";
   });
 
   initMap();
-  initFirebaseServices().then(loadInitial);
+  initFirebaseServices().then(async () => {
+    const isFarmerAllowed = await enforceFarmerAccess();
+    if (!isFarmerAllowed) return;
+    const allowed = await enforceRouteGuard();
+    if (!allowed) return;
+    await loadInitial();
+  });
   syncMapFromInputs();
 })();

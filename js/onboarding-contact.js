@@ -1,10 +1,15 @@
 import { showToast, isValidEmail, isValidPhone, clearError, setError } from "./common.js";
 import {
-  saveOnboardingContactInfo,
-  getCurrentUserProfile,
-  signOutUser,
-  mapFirebaseError,
-} from "./firebase.js";
+  ONBOARDING_BASE_KEYS,
+  getScopedDraft,
+  setScopedDraft,
+  setActiveSession,
+  getActiveRole,
+  isAdmin,
+  isInvestor,
+  routeByRole,
+  clearActiveSession,
+} from "./session.js";
 
 (function initOnboardingContact() {
   const form = document.getElementById("onboardingContactForm");
@@ -19,7 +24,14 @@ import {
   const backBtn = document.getElementById("backBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  const LS_KEY = "agriinvest.onboarding.contact";
+  let saveOnboardingContactInfo = null;
+  let getCurrentUserProfile = null;
+  let getCurrentUser = null;
+  let signOutUser = null;
+  let mapFirebaseError = null;
+  let autosaveTimer = null;
+
+  const BASE_KEY = ONBOARDING_BASE_KEYS.contact;
 
   function getSelectedCommMethod() {
     const el = form.querySelector('input[name="commMethod"]:checked');
@@ -82,21 +94,59 @@ import {
   }
 
   function loadDraft() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return;
+    const draft = getScopedDraft(BASE_KEY);
+    if (draft.primaryMobile) primaryMobile.value = draft.primaryMobile;
+    if (draft.primaryEmail) primaryEmail.value = draft.primaryEmail;
+    if (draft.secondaryContact) secondaryContact.value = draft.secondaryContact;
+    if (draft.commMethod) setCommMethod(draft.commMethod);
+  }
 
+  async function initFirebaseServices() {
     try {
-      const draft = JSON.parse(raw);
-      if (draft.primaryMobile) primaryMobile.value = draft.primaryMobile;
-      if (draft.primaryEmail) primaryEmail.value = draft.primaryEmail;
-      if (draft.secondaryContact) secondaryContact.value = draft.secondaryContact;
-      if (draft.commMethod) setCommMethod(draft.commMethod);
+      const firebase = await import("./firebase.js");
+      saveOnboardingContactInfo = firebase.saveOnboardingContactInfo;
+      getCurrentUserProfile = firebase.getCurrentUserProfile;
+      getCurrentUser = firebase.getCurrentUser;
+      signOutUser = firebase.signOutUser;
+      mapFirebaseError = firebase.mapFirebaseError;
     } catch {
-      localStorage.removeItem(LS_KEY);
+      showToast("Cloud sync unavailable. You can still continue with local progress.");
     }
   }
 
+  async function enforceFarmerAccess() {
+    const cachedRole = getActiveRole();
+    if (isInvestor(cachedRole) || isAdmin(cachedRole)) {
+      routeByRole(cachedRole);
+      return false;
+    }
+
+    if (!getCurrentUserProfile) {
+      return true;
+    }
+
+    try {
+      const profile = await getCurrentUserProfile();
+      const role = profile?.role || cachedRole;
+      const uid = getCurrentUser?.()?.uid;
+      if (uid) {
+        setActiveSession({ uid, role });
+      }
+
+      if (isInvestor(role) || isAdmin(role)) {
+        routeByRole(role);
+        return false;
+      }
+    } catch {
+      // allow local mode if profile is not available
+    }
+
+    return true;
+  }
+
   async function loadServerDraft() {
+    if (!getCurrentUserProfile) return;
+
     try {
       const profile = await getCurrentUserProfile();
       const draft = profile?.onboarding?.step1ContactInfo;
@@ -112,16 +162,43 @@ import {
   }
 
   async function persist(data, mode) {
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    setScopedDraft(BASE_KEY, data);
+
+    if (!saveOnboardingContactInfo) {
+      showToast(mode === "continue" ? "Saved locally. Continuing." : "Progress saved locally.");
+      return true;
+    }
 
     try {
       await saveOnboardingContactInfo(data);
       showToast(mode === "continue" ? "Contact info saved. Continue to Farm Location." : "Progress saved.");
       return true;
     } catch (error) {
-      showToast(mapFirebaseError(error));
+      showToast(mapFirebaseError ? mapFirebaseError(error) : "Unable to save to cloud right now.");
       return false;
     }
+  }
+
+  function scheduleAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(async () => {
+      const { valid, data } = validate();
+      if (!valid) {
+        return;
+      }
+
+      setScopedDraft(BASE_KEY, data);
+
+      if (!saveOnboardingContactInfo) {
+        return;
+      }
+
+      try {
+        await saveOnboardingContactInfo(data);
+      } catch {
+        // keep silent on autosave errors; explicit save/continue will show feedback
+      }
+    }, 700);
   }
 
   [primaryMobile, primaryEmail, secondaryContact].forEach((el) => {
@@ -132,11 +209,15 @@ import {
         secondaryContact: "secondaryContactError",
       };
       clearError(map[el.id]);
+      scheduleAutosave();
     });
   });
 
   form.querySelectorAll('input[name="commMethod"]').forEach((el) => {
-    el.addEventListener("change", () => clearError("commMethodError"));
+    el.addEventListener("change", () => {
+      clearError("commMethodError");
+      scheduleAutosave();
+    });
   });
 
   saveBtn.addEventListener("click", async () => {
@@ -171,11 +252,14 @@ import {
 
   logoutBtn?.addEventListener("click", async () => {
     logoutBtn.disabled = true;
-    try {
-      await signOutUser();
-    } catch {
-      // always redirect even if signout request fails
+    if (signOutUser) {
+      try {
+        await signOutUser();
+      } catch {
+        // always redirect even if signout request fails
+      }
     }
+    clearActiveSession();
     window.location.href = "index.html";
   });
 
@@ -187,5 +271,9 @@ import {
   });
 
   loadDraft();
-  loadServerDraft();
+  initFirebaseServices().then(async () => {
+    const allowed = await enforceFarmerAccess();
+    if (!allowed) return;
+    await loadServerDraft();
+  });
 })();

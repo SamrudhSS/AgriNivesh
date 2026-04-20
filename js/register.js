@@ -4,12 +4,18 @@ import {
   clearError,
   setError,
 } from "./common.js";
-import { registerWithEmailProfile, mapFirebaseError } from "./firebase.js";
+import {
+  registerWithEmailProfile,
+  signInWithGoogle,
+  mapFirebaseError,
+} from "./firebase.js";
+import { normalizeRole, setActiveSession, clearLegacyOnboardingDrafts } from "./session.js";
 
 (function initRegister() {
   const form = document.getElementById("registerForm");
   if (!form) return;
 
+  const roleGroup = document.getElementById("roleGroup");
   const roleButtons = Array.from(document.querySelectorAll(".role-card"));
   const fullNameInput = document.getElementById("regFullName");
   const countryCodeInput = document.getElementById("regCountryCode");
@@ -18,6 +24,7 @@ import { registerWithEmailProfile, mapFirebaseError } from "./firebase.js";
   const passwordInput = document.getElementById("regPassword");
   const confirmInput = document.getElementById("regConfirmPassword");
   const termsInput = document.getElementById("regTerms");
+  const googleBtn = document.getElementById("googleRegisterBtn");
 
   const passToggle = document.getElementById("regPasswordToggle");
   const confirmToggle = document.getElementById("regConfirmPasswordToggle");
@@ -31,21 +38,55 @@ import { registerWithEmailProfile, mapFirebaseError } from "./firebase.js";
   const strengthLabel = document.getElementById("strengthLabel");
   const submitBtn = form.querySelector('button[type="submit"]');
   const submitText = submitBtn.textContent;
+  const googleText = googleBtn?.querySelector("span")?.textContent || "Sign up with Google";
 
   let selectedRole = "Farmer";
+
+  async function redirectAfterRegister(role) {
+    const normalized = normalizeRole(role);
+    if (normalized === "admin") {
+      window.location.replace("admin-dashboard.html");
+      return;
+    }
+
+    if (normalized === "investor") {
+      window.location.replace("investor-dashboard.html");
+      return;
+    }
+
+    window.location.replace("onboarding-contact.html");
+  }
+
+  function getSelectedRoleFromUI() {
+    const selected = roleGroup?.querySelector(".role-card.selected[data-role]");
+    const role = selected?.getAttribute("data-role") || selectedRole;
+    return role || "Farmer";
+  }
+
+  selectedRole = getSelectedRoleFromUI();
 
   function setSubmitLoading(loading) {
     submitBtn.disabled = loading;
     submitBtn.textContent = loading ? "Creating account..." : submitText;
   }
 
+  function setGoogleLoading(loading) {
+    if (!googleBtn) return;
+    googleBtn.disabled = loading;
+    googleBtn.style.opacity = loading ? "0.7" : "1";
+    const label = googleBtn.querySelector("span");
+    if (label) {
+      label.textContent = loading ? "Signing up..." : googleText;
+    }
+  }
+
   roleButtons.forEach(function (button) {
     button.addEventListener("click", function () {
-      selectedRole = button.getAttribute("data-role");
       roleButtons.forEach(function (b) {
         b.classList.remove("selected");
       });
       button.classList.add("selected");
+      selectedRole = getSelectedRoleFromUI();
     });
   });
 
@@ -111,6 +152,31 @@ import { registerWithEmailProfile, mapFirebaseError } from "./firebase.js";
 
   termsInput.addEventListener("change", function () {
     clearError("regTermsError");
+  });
+
+  googleBtn?.addEventListener("click", async function () {
+    clearError("regTermsError");
+    if (!termsInput.checked) {
+      setError("regTermsError", "Please agree to Terms of Service and Privacy Policy");
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      const roleToUse = getSelectedRoleFromUI();
+      const user = await signInWithGoogle({ role: roleToUse, termsAccepted: true });
+      setActiveSession({ uid: user?.uid, role: roleToUse });
+      clearLegacyOnboardingDrafts();
+
+      showToast("Google registration successful. Redirecting...");
+      setTimeout(function () {
+        redirectAfterRegister(roleToUse);
+      }, 700);
+    } catch (error) {
+      showToast(mapFirebaseError(error));
+    } finally {
+      setGoogleLoading(false);
+    }
   });
 
   form.addEventListener("submit", async function (event) {
@@ -187,19 +253,22 @@ import { registerWithEmailProfile, mapFirebaseError } from "./firebase.js";
 
     setSubmitLoading(true);
     try {
-      await registerWithEmailProfile({
+      const roleToUse = getSelectedRoleFromUI();
+      const user = await registerWithEmailProfile({
         fullName,
         email,
         password,
         phone,
         countryCode,
-        role: selectedRole,
+        role: roleToUse,
         termsAccepted: true,
       });
+      setActiveSession({ uid: user?.uid, role: roleToUse });
+      clearLegacyOnboardingDrafts();
 
       showToast("Registration successful. Redirecting...");
       setTimeout(function () {
-        window.location.href = "onboarding-contact.html";
+        redirectAfterRegister(roleToUse);
       }, 900);
     } catch (error) {
       showToast(mapFirebaseError(error));
