@@ -34,6 +34,13 @@
         </div>
 
         <form id="loginForm" novalidate>
+          <label class="micro">LOGIN AS</label>
+          <div class="roles" id="loginRoleGroup">
+            <button type="button" class="role-card selected" data-role="Farmer">Farmer</button>
+            <button type="button" class="role-card" data-role="Investor">Investor</button>
+            <button type="button" class="role-card" data-role="Admin">Admin</button>
+          </div>
+
           <label>Email or Phone Number</label>
           <div class="input-wrap">
             <input id="loginIdentity" type="text" placeholder="name@farm.com" />

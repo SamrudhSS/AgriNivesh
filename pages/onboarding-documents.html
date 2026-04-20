@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
   <link rel="stylesheet" href="../css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <nav class="onb-topnav">
@@ -76,12 +77,56 @@
         </ul>
       </section>
 
+      <section class="card docs-status" id="documentExtractionStatus" hidden>
+        <h3>Document Extraction Status</h3>
+        <div class="ocr-progress-wrap" id="ocrProgressWrap" hidden>
+          <p class="ocr-progress-label" id="ocrProgressLabel">Initializing OCR engine…</p>
+          <div class="ocr-progress-track">
+            <span class="ocr-progress-fill" id="ocrProgressFill" style="width: 0%"></span>
+          </div>
+        </div>
+        <p id="extractionStatus">No extraction performed yet.</p>
+
+        <!-- Identity Doc Results -->
+        <div class="ocr-result-block" id="identityOcrResult" hidden>
+          <h4><span class="material-symbols-outlined">badge</span> Identity Document</h4>
+          <div class="ocr-meta">
+            <span class="ocr-doc-type" id="identityOcrType"></span>
+            <span class="ocr-confidence" id="identityOcrConf"></span>
+            <span class="ocr-word-count" id="identityOcrWordCount"></span>
+          </div>
+
+          <p class="ocr-section-label">Keywords Extracted</p>
+          <div class="ocr-keywords" id="identityOcrKeywords"></div>
+
+          <p class="ocr-section-label">Full Extracted Text</p>
+          <div class="ocr-text-display" id="identityOcrText"></div>
+        </div>
+
+        <!-- Land Doc Results -->
+        <div class="ocr-result-block" id="landOcrResult" hidden>
+          <h4><span class="material-symbols-outlined">description</span> Land Document</h4>
+          <div class="ocr-meta">
+            <span class="ocr-doc-type" id="landOcrType"></span>
+            <span class="ocr-confidence" id="landOcrConf"></span>
+            <span class="ocr-word-count" id="landOcrWordCount"></span>
+          </div>
+
+          <p class="ocr-section-label">Keywords Extracted</p>
+          <div class="ocr-keywords" id="landOcrKeywords"></div>
+
+          <p class="ocr-section-label">Full Extracted Text</p>
+          <div class="ocr-text-display" id="landOcrText"></div>
+        </div>
+      </section>
+
       <footer class="onb-footer">
         <div class="progress-wrap">
           <div class="progress-track"><span class="progress-fill progress-75"></span></div>
           <span>75% Complete</span>
         </div>
         <div class="footer-actions">
+          <button id="documentsExtractBtn" type="button" class="btn btn-ghost">Extract Data</button>
           <button id="documentsBackBtn" type="button" class="btn btn-ghost">Back</button>
           <button id="documentsContinueBtn" type="button" class="btn btn-primary">Continue</button>
         </div>

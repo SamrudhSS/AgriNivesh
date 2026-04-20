@@ -9,8 +9,16 @@ import {
   loginWithEmail,
   signInWithGoogle,
   sendResetEmail,
+  getCurrentUserProfile,
   mapFirebaseError,
 } from "./firebase.js";
+import {
+  routeByRole,
+  setActiveSession,
+  getRoleForUid,
+  normalizeRole,
+  clearLegacyOnboardingDrafts,
+} from "./session.js";
 
 (function initLogin() {
   const form = document.getElementById("loginForm");
@@ -18,6 +26,8 @@ import {
 
   const identityInput = document.getElementById("loginIdentity");
   const passwordInput = document.getElementById("loginPassword");
+  const roleGroup = document.getElementById("loginRoleGroup");
+  const roleButtons = Array.from(document.querySelectorAll("#loginRoleGroup .role-card"));
   const rememberMeInput = document.getElementById("rememberMe");
   const toggleBtn = document.getElementById("loginPasswordToggle");
   const forgotBtn = document.getElementById("forgotPasswordBtn");
@@ -26,6 +36,44 @@ import {
 
   const submitText = submitBtn.textContent;
   const googleText = googleBtn.querySelector("span").textContent;
+  let selectedRole = "Farmer";
+
+  function getSelectedRoleFromUI() {
+    const selected = roleGroup?.querySelector(".role-card.selected[data-role]");
+    return selected?.getAttribute("data-role") || selectedRole || "Farmer";
+  }
+
+  selectedRole = getSelectedRoleFromUI();
+
+  roleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      roleButtons.forEach((b) => b.classList.remove("selected"));
+      button.classList.add("selected");
+      selectedRole = getSelectedRoleFromUI();
+    });
+  });
+
+  function showRoleSelectionInfo(actualRole, requestedRole) {
+    if (normalizeRole(actualRole) === normalizeRole(requestedRole)) {
+      return;
+    }
+
+    showToast(`Role mismatch detected. Signed in as ${actualRole}.`);
+  }
+
+  async function resolveRoleOrDefault(uid, defaultRole = "Farmer") {
+    try {
+      const profile = await getCurrentUserProfile();
+      if (profile?.role) {
+        return profile.role;
+      }
+    } catch {
+      // continue to local fallback
+    }
+
+    const cachedRole = getRoleForUid(uid);
+    return cachedRole || defaultRole;
+  }
 
   function setSubmitLoading(loading) {
     submitBtn.disabled = loading;
@@ -64,10 +112,14 @@ import {
   googleBtn.addEventListener("click", async function () {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      const role = await resolveRoleOrDefault(user?.uid, getSelectedRoleFromUI());
+      showRoleSelectionInfo(role, getSelectedRoleFromUI());
+      setActiveSession({ uid: user?.uid, role });
+      clearLegacyOnboardingDrafts();
       showToast("Google sign-in successful. Redirecting...");
       setTimeout(function () {
-        window.location.href = "onboarding-contact.html";
+        routeByRole(role);
       }, 800);
     } catch (error) {
       showToast(mapFirebaseError(error));
@@ -121,10 +173,14 @@ import {
 
     setSubmitLoading(true);
     try {
-      await loginWithEmail(identity, password, rememberMeInput.checked);
+      const user = await loginWithEmail(identity, password, rememberMeInput.checked);
+      const role = await resolveRoleOrDefault(user?.uid, getSelectedRoleFromUI());
+      showRoleSelectionInfo(role, getSelectedRoleFromUI());
+      setActiveSession({ uid: user?.uid, role });
+      clearLegacyOnboardingDrafts();
       showToast("Login successful. Redirecting...");
       setTimeout(function () {
-        window.location.href = "onboarding-contact.html";
+        routeByRole(role);
       }, 800);
     } catch (error) {
       showToast(mapFirebaseError(error));

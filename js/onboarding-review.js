@@ -1,11 +1,15 @@
 import { showToast, clearError, setError } from "./common.js";
 import {
-  saveOnboardingReview,
-  submitOnboardingApplication,
-  getCurrentUserProfile,
-  signOutUser,
-  mapFirebaseError,
-} from "./firebase.js";
+  ONBOARDING_BASE_KEYS,
+  getScopedDraft,
+  setScopedDraft,
+  setActiveSession,
+  getActiveRole,
+  isAdmin,
+  isInvestor,
+  routeByRole,
+  clearActiveSession,
+} from "./session.js";
 
 (function initOnboardingReview() {
   const contactSummary = document.getElementById("summaryContact");
@@ -20,16 +24,55 @@ import {
   const backBtn = document.getElementById("reviewBackBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
-  const LS_REVIEW = "agriinvest.onboarding.review";
+  let saveOnboardingReview = null;
+  let submitOnboardingApplication = null;
+  let getCurrentUserProfile = null;
+  let getCurrentUser = null;
+  let signOutUser = null;
+  let mapFirebaseError = null;
+
+  const REVIEW_BASE_KEY = ONBOARDING_BASE_KEYS.review;
+  const CONTACT_BASE_KEY = ONBOARDING_BASE_KEYS.contact;
+  const LOCATION_BASE_KEY = ONBOARDING_BASE_KEYS.location;
+  const DOCUMENTS_BASE_KEY = ONBOARDING_BASE_KEYS.documents;
+  const REQUIRED_CONTACT_FIELDS = ["primaryMobile", "primaryEmail", "commMethod"];
+  const REQUIRED_LOCATION_FIELDS = [
+    "farmName",
+    "state",
+    "district",
+    "primaryCrop",
+    "acreageHectare",
+    "latitude",
+    "longitude",
+  ];
+  const REQUIRED_DOCUMENT_FIELDS = ["identityDocName", "landDocName"];
 
   function field(label, value) {
     return `<dt>${label}</dt><dd>${value || "-"}</dd>`;
   }
 
-  function render(profile) {
-    const s1 = profile?.onboarding?.step1ContactInfo || {};
-    const s2 = profile?.onboarding?.step2FarmLocation || {};
-    const s3 = profile?.onboarding?.step3Documents || {};
+  function formatConfidence(value) {
+    if (typeof value !== "number") {
+      return "unknown";
+    }
+    return `${Math.round(value * 100)}%`;
+  }
+
+  function renderDocumentSummary(name, data = {}) {
+    const fileName = data.fileName || name;
+    const docType = data.docType || "Unknown";
+    const confidence = formatConfidence(data.confidence);
+
+    return `
+      <li class="summary-doc-item">
+        <strong>${fileName}</strong><br>
+        Type: ${docType}<br>
+        Confidence: ${confidence}
+      </li>
+    `;
+  }
+
+  function renderSections(s1 = {}, s2 = {}, s3 = {}) {
 
     contactSummary.innerHTML =
       field("Primary Mobile", s1.primaryMobile) +
@@ -45,18 +88,167 @@ import {
       field("Acreage", s2.acreageHectare) +
       field("Coordinates", `${s2.latitude || "-"}, ${s2.longitude || "-"}`);
 
-    documentsSummary.innerHTML = [
-      s3.identityDocName ? `<li>Identity: ${s3.identityDocName}</li>` : "<li>Identity: Missing</li>",
-      s3.landDocName ? `<li>Land: ${s3.landDocName}</li>` : "<li>Land: Missing</li>",
-    ].join("");
+    const identityList = s3.identityDocName || s3.ocrExtraction?.identityDoc
+      ? renderDocumentSummary(s3.identityDocName || "Identity Document", s3.ocrExtraction?.identityDoc)
+      : "<li>Identity: Missing</li>";
+
+    const landList = s3.landDocName || s3.ocrExtraction?.landDoc
+      ? renderDocumentSummary(s3.landDocName || "Land Document", s3.ocrExtraction?.landDoc)
+      : "<li>Land: Missing</li>";
+
+    documentsSummary.innerHTML = `${identityList}${landList}`;
+  }
+
+  function parseLocalJson(baseKey) {
+    return getScopedDraft(baseKey);
+  }
+
+  function mergeWithNonEmpty(primary = {}, fallback = {}) {
+    const merged = { ...fallback };
+
+    Object.entries(primary).forEach(([key, value]) => {
+      const isString = typeof value === "string";
+      const hasValue = isString ? value.trim() !== "" : value !== null && value !== undefined;
+      if (hasValue) {
+        merged[key] = value;
+      }
+    });
+
+    return merged;
+  }
+
+  function hasRequiredValues(data, fields) {
+    return fields.every((field) => String(data?.[field] ?? "").trim() !== "");
+  }
+
+  function resolveMissingStep(s1, s2, s3) {
+    if (!hasRequiredValues(s1, REQUIRED_CONTACT_FIELDS)) {
+      return { target: "onboarding-contact.html", message: "Please complete Contact Details first." };
+    }
+
+    if (!hasRequiredValues(s2, REQUIRED_LOCATION_FIELDS)) {
+      return { target: "onboarding-location.html", message: "Please complete Farm Location first." };
+    }
+
+    if (!hasRequiredValues(s3, REQUIRED_DOCUMENT_FIELDS)) {
+      return { target: "onboarding-documents.html", message: "Please complete Documents first." };
+    }
+
+    return null;
+  }
+
+  async function enforceFarmerAccess() {
+    const cachedRole = getActiveRole();
+    if (isInvestor(cachedRole) || isAdmin(cachedRole)) {
+      routeByRole(cachedRole);
+      return false;
+    }
+
+    if (!getCurrentUserProfile) {
+      return true;
+    }
+
+    try {
+      const profile = await getCurrentUserProfile();
+      const role = profile?.role || cachedRole;
+      const uid = getCurrentUser?.()?.uid;
+      if (uid) {
+        setActiveSession({ uid, role });
+      }
+
+      if (isInvestor(role) || isAdmin(role)) {
+        routeByRole(role);
+        return false;
+      }
+    } catch {
+      // allow local mode
+    }
+
+    return true;
+  }
+
+  async function enforceRouteGuard() {
+    const localS1 = parseLocalJson(CONTACT_BASE_KEY);
+    const localS2 = parseLocalJson(LOCATION_BASE_KEY);
+    const localS3 = parseLocalJson(DOCUMENTS_BASE_KEY);
+
+    const missingLocal = resolveMissingStep(localS1, localS2, localS3);
+    if (!missingLocal) {
+      return true;
+    }
+
+    if (getCurrentUserProfile) {
+      try {
+        const profile = await getCurrentUserProfile();
+        const cloudS1 = profile?.onboarding?.step1ContactInfo || {};
+        const cloudS2 = profile?.onboarding?.step2FarmLocation || {};
+        const cloudS3 = profile?.onboarding?.step3Documents || {};
+
+        const missingCloud = resolveMissingStep(cloudS1, cloudS2, cloudS3);
+        if (!missingCloud) {
+          return true;
+        }
+
+        showToast(missingCloud.message);
+        window.location.href = missingCloud.target;
+        return false;
+      } catch {
+        // fallback to local redirect below
+      }
+    }
+
+    showToast(missingLocal.message);
+    window.location.href = missingLocal.target;
+    return false;
+  }
+
+  function renderFromLocalDrafts() {
+    const s1 = parseLocalJson(CONTACT_BASE_KEY);
+    const s2 = parseLocalJson(LOCATION_BASE_KEY);
+    const s3 = parseLocalJson(DOCUMENTS_BASE_KEY);
+    renderSections(s1, s2, s3);
+  }
+
+  function renderFromCloudProfile(profile) {
+    const localS1 = parseLocalJson(CONTACT_BASE_KEY);
+    const localS2 = parseLocalJson(LOCATION_BASE_KEY);
+    const localS3 = parseLocalJson(DOCUMENTS_BASE_KEY);
+
+    const cloudS1 = profile?.onboarding?.step1ContactInfo || {};
+    const cloudS2 = profile?.onboarding?.step2FarmLocation || {};
+    const cloudS3 = profile?.onboarding?.step3Documents || {};
+
+    const s1 = mergeWithNonEmpty(cloudS1, localS1);
+    const s2 = mergeWithNonEmpty(cloudS2, localS2);
+    const s3 = mergeWithNonEmpty(cloudS3, localS3);
+
+    renderSections(s1, s2, s3);
+  }
+
+  async function initFirebaseServices() {
+    try {
+      const firebase = await import("./firebase.js");
+      saveOnboardingReview = firebase.saveOnboardingReview;
+      submitOnboardingApplication = firebase.submitOnboardingApplication;
+      getCurrentUserProfile = firebase.getCurrentUserProfile;
+      getCurrentUser = firebase.getCurrentUser;
+      signOutUser = firebase.signOutUser;
+      mapFirebaseError = firebase.mapFirebaseError;
+    } catch {
+      showToast("Cloud sync unavailable. You can still navigate locally.");
+    }
   }
 
   async function load() {
+    renderFromLocalDrafts();
+
+    if (!getCurrentUserProfile) return;
+
     try {
       const profile = await getCurrentUserProfile();
-      render(profile);
+      renderFromCloudProfile(profile);
     } catch (error) {
-      showToast(mapFirebaseError(error));
+      showToast(mapFirebaseError ? mapFirebaseError(error) : "Showing locally saved data.");
     }
   }
 
@@ -66,11 +258,15 @@ import {
         declarationChecked: reviewConfirm.checked,
         updatedAt: new Date().toISOString(),
       };
-      localStorage.setItem(LS_REVIEW, JSON.stringify(payload));
-      await saveOnboardingReview(payload);
-      showToast("Review state saved.");
+      setScopedDraft(REVIEW_BASE_KEY, payload);
+      if (saveOnboardingReview) {
+        await saveOnboardingReview(payload);
+        showToast("Review state saved.");
+      } else {
+        showToast("Review state saved locally.");
+      }
     } catch (error) {
-      showToast(mapFirebaseError(error));
+      showToast(mapFirebaseError ? mapFirebaseError(error) : "Unable to save cloud draft.");
     }
   }
 
@@ -89,14 +285,18 @@ import {
 
     submitBtn.disabled = true;
     try {
-      await saveOnboardingReview({ declarationChecked: true, updatedAt: new Date().toISOString() });
-      await submitOnboardingApplication();
+      if (saveOnboardingReview) {
+        await saveOnboardingReview({ declarationChecked: true, updatedAt: new Date().toISOString() });
+      }
+      if (submitOnboardingApplication) {
+        await submitOnboardingApplication();
+      }
       showToast("Application submitted successfully.");
       setTimeout(() => {
         window.location.href = "verification-dashboard.html";
       }, 900);
     } catch (error) {
-      showToast(mapFirebaseError(error));
+      showToast(mapFirebaseError ? mapFirebaseError(error) : "Unable to submit cloud application.");
     } finally {
       submitBtn.disabled = false;
     }
@@ -108,11 +308,14 @@ import {
 
   logoutBtn?.addEventListener("click", async () => {
     logoutBtn.disabled = true;
-    try {
-      await signOutUser();
-    } catch {
-      // continue redirect
+    if (signOutUser) {
+      try {
+        await signOutUser();
+      } catch {
+        // continue redirect
+      }
     }
+    clearActiveSession();
     window.location.href = "index.html";
   });
 
@@ -125,14 +328,13 @@ import {
 
   reviewConfirm.addEventListener("change", () => clearError(reviewConfirmError));
 
-  const reviewDraft = localStorage.getItem(LS_REVIEW);
-  if (reviewDraft) {
-    try {
-      reviewConfirm.checked = !!JSON.parse(reviewDraft).declarationChecked;
-    } catch {
-      localStorage.removeItem(LS_REVIEW);
-    }
-  }
+  reviewConfirm.checked = !!parseLocalJson(REVIEW_BASE_KEY).declarationChecked;
 
-  load();
+  initFirebaseServices().then(async () => {
+    const isFarmerAllowed = await enforceFarmerAccess();
+    if (!isFarmerAllowed) return;
+    const allowed = await enforceRouteGuard();
+    if (!allowed) return;
+    await load();
+  });
 })();

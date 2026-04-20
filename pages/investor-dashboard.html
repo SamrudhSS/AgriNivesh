@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investor Dashboard | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header class="dash-topbar">
+    <div class="onb-brand">Editorial Agritech</div>
+    <nav>
+      <a href="investor-dashboard.html" class="active">Investor</a>
+      <a href="#">Opportunities</a>
+      <a href="#">Portfolio</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-ghost" type="button">Logout</button>
+  </header>
+
+  <main class="dash-main">
+    <section class="dash-hero card">
+      <div>
+        <p class="tiny">Investor Workspace</p>
+        <h1>Investor Dashboard</h1>
+        <p>Welcome to your investment command center. Track farmer opportunities, monitor portfolio performance, and review onboarding submissions.</p>
+      </div>
+      <div class="dash-status">Status: Active</div>
+    </section>
+
+    <section class="dash-grid">
+      <article class="card">
+        <h3>Portfolio Snapshot</h3>
+        <p>Total Invested: --</p>
+      </article>
+      <article class="card">
+        <h3>Open Opportunities</h3>
+        <p>New opportunities will appear here.</p>
+      </article>
+      <article class="card">
+        <h3>Risk Signals</h3>
+        <p>AI risk indicators will appear here.</p>
+      </article>
+    </section>
+  </main>
+
+  <script type="module">
+    import { getCurrentUserProfile, getCurrentUser, signOutUser } from "../js/firebase.js";
+    import { setActiveSession, getActiveRole, isInvestor, isAdmin, clearActiveSession, routeByRole } from "../js/session.js";
+
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    async function enforceInvestorAccess() {
+      const hintRole = new URLSearchParams(window.location.search).get("role");
+      const hintedInvestor = String(hintRole || "").toLowerCase() === "investor";
+
+      try {
+        const uid = getCurrentUser()?.uid;
+        const profile = await getCurrentUserProfile();
+        const role = profile?.role || getActiveRole() || (hintedInvestor ? "investor" : "");
+
+        if (uid) {
+          setActiveSession({ uid, role });
+        }
+
+        if (isAdmin(role)) {
+          window.location.href = "admin-dashboard.html";
+          return;
+        }
+
+        if (!isInvestor(role)) {
+          routeByRole(role || "Farmer");
+        }
+      } catch {
+        if (hintedInvestor) {
+          const uid = getCurrentUser()?.uid;
+          if (uid) {
+            setActiveSession({ uid, role: "investor" });
+            return;
+          }
+        }
+        window.location.href = "index.html";
+      }
+    }
+
+    logoutBtn?.addEventListener("click", async () => {
+      logoutBtn.disabled = true;
+      try {
+        await signOutUser();
+      } catch {
+        // ignore and redirect
+      }
+      clearActiveSession();
+      window.location.href = "index.html";
+    });
+
+    enforceInvestorAccess();
+  </script>
+</body>
+</html>

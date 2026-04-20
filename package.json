@@ -1,0 +1,25 @@
+{
+  "name": "agriinvest_auth_web",
+  "version": "1.0.0",
+  "description": "A multi-page frontend for AgriInvest AI onboarding, built with HTML, CSS, and JavaScript.",
+  "main": "env.example.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamrudhSS/AgriNivesh.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SamrudhSS/AgriNivesh/issues"
+  },
+  "homepage": "https://github.com/SamrudhSS/AgriNivesh#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "playwright": "^1.59.1"
+  }
+}

@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  onAuthStateChanged,
   GoogleAuthProvider,
   sendPasswordResetEmail,
   setPersistence,
@@ -13,10 +14,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   getFirestore,
+  collection,
   doc,
   getDoc,
+  getDocs,
+  query,
   setDoc,
   serverTimestamp,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
@@ -40,6 +45,34 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
+async function waitForCurrentUser(timeoutMs = 5000) {
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        unsubscribe();
+        resolve(auth.currentUser || null);
+      }
+    }, timeoutMs);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      unsubscribe();
+      resolve(user || null);
+    });
+  });
+}
 
 function mapFirebaseError(error) {
   const code = error?.code || "";
@@ -101,20 +134,31 @@ export async function loginWithEmail(identity, password, rememberMe) {
   return credential.user;
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(options = {}) {
+  const { role, termsAccepted } = options;
   const credential = await signInWithPopup(auth, googleProvider);
   const user = credential.user;
 
+  const profile = {
+    uid: user.uid,
+    fullName: user.displayName || "",
+    email: user.email || "",
+    authProvider: "google",
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  };
+
+  if (role) {
+    profile.role = role;
+  }
+
+  if (typeof termsAccepted === "boolean") {
+    profile.termsAccepted = termsAccepted;
+  }
+
   await setDoc(
     doc(db, "users", user.uid),
-    {
-      uid: user.uid,
-      fullName: user.displayName || "",
-      email: user.email || "",
-      authProvider: "google",
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    },
+    profile,
     { merge: true }
   );
 
@@ -239,13 +283,45 @@ export async function submitOnboardingApplication() {
 }
 
 export async function getCurrentUserProfile() {
-  const user = auth.currentUser;
+  const user = await waitForCurrentUser();
   if (!user) {
     throw new Error("Please log in to load profile data.");
   }
 
   const snap = await getDoc(doc(db, "users", user.uid));
   return snap.exists() ? snap.data() : {};
+}
+
+export async function getSubmittedFarmerApplications() {
+  const usersRef = collection(db, "users");
+  const q = query(
+    usersRef,
+    where("role", "==", "Farmer"),
+    where("onboarding.status", "==", "submitted")
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+}
+
+export async function updateFarmerVerificationStatus(targetUid, verificationStatus) {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("Please log in as admin before verifying farmers.");
+  }
+
+  await setDoc(
+    doc(db, "users", targetUid),
+    {
+      verificationStatus,
+      onboarding: {
+        reviewedBy: user.uid,
+        reviewedAt: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 export function getCurrentUser() {

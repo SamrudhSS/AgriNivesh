@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Verification Dashboard | AgriInvest AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header class="dash-topbar">
+    <div class="onb-brand">Editorial Agritech</div>
+    <nav>
+      <a href="admin-dashboard.html" class="active">Admin</a>
+      <a href="#">Verifications</a>
+      <a href="#">Audit</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-ghost" type="button">Logout</button>
+  </header>
+
+  <main class="dash-main">
+    <section class="dash-hero card">
+      <div>
+        <p class="tiny">Admin Workspace</p>
+        <h1>Farmer Verification Queue</h1>
+        <p id="adminWelcome">Loading submitted applications...</p>
+      </div>
+      <div class="dash-status" id="queueCount">Queue: 0</div>
+    </section>
+
+    <section class="dash-grid" id="adminQueue"></section>
+  </main>
+
+  <script type="module" src="../js/admin-dashboard.js"></script>
+</body>
+</html>
