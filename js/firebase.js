@@ -13,6 +13,7 @@ import {
   browserSessionPersistence,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
+  addDoc,
   getFirestore,
   collection,
   doc,
@@ -388,6 +389,51 @@ export async function getAllFarmerProfiles() {
       ...profile,
       verificationStatus: data?.verificationStatus || profile?.verificationStatus || "pending",
     };
+  });
+}
+
+export async function getFarmerProfileByUid(farmerUid) {
+  if (!farmerUid) {
+    throw new Error("Farmer ID is required.");
+  }
+
+  const snap = await getDoc(doc(db, "users", farmerUid));
+  if (!snap.exists()) {
+    throw new Error("Farmer profile not found.");
+  }
+
+  const data = snap.data() || {};
+  if (data?.role !== "Farmer") {
+    throw new Error("Selected user is not a farmer profile.");
+  }
+
+  const profile = data?.farmerProfile || buildFarmerProfileFromUserData(data);
+  return {
+    uid: farmerUid,
+    ...profile,
+    verificationStatus: data?.verificationStatus || profile?.verificationStatus || "pending",
+  };
+}
+
+export async function createInvestmentIntent(targetFarmerUid, amount) {
+  const user = await waitForCurrentUser();
+  if (!user) {
+    throw new Error("Please log in before creating an investment intent.");
+  }
+
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    throw new Error("Enter a valid investment amount.");
+  }
+
+  await addDoc(collection(db, "investmentIntents"), {
+    investorUid: user.uid,
+    targetFarmerUid,
+    amount: numericAmount,
+    currency: "USD",
+    status: "initiated",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
 }
 

@@ -3,6 +3,7 @@ import {
   getCurrentUserProfile,
   getCurrentUser,
   getAllFarmerProfiles,
+  createInvestmentIntent,
   signOutUser,
   mapFirebaseError,
 } from "./firebase.js";
@@ -22,10 +23,11 @@ import {
 
   function profileCard(profile) {
     const status = String(profile?.verificationStatus || "pending").toUpperCase();
+    const name = profile.fullName || profile.farmName || "Farmer";
 
     return `
-      <article class="card">
-        <h3>${profile.fullName || profile.farmName || "Farmer"}</h3>
+      <article class="card" data-uid="${profile.uid}">
+        <h3>${name}</h3>
         <p>Farm: ${profile.farmName || "-"}</p>
         <p>Location: ${profile.district || "-"}, ${profile.state || "-"}</p>
         <p>Crop: ${profile.primaryCrop || "-"}</p>
@@ -33,6 +35,10 @@ import {
         <p>Verification: ${status}</p>
         <p>Identity Doc: ${profile.identityDocName || "-"}</p>
         <p>Land Doc: ${profile.landDocName || "-"}</p>
+        <div class="footer-actions" style="margin-top:10px;">
+          <button class="btn btn-ghost" data-action="view" type="button">View Details</button>
+          <button class="btn btn-primary" data-action="invest" type="button">Invest</button>
+        </div>
       </article>
     `;
   }
@@ -92,6 +98,48 @@ import {
       profileInfo.textContent = "Unable to load farmer profiles.";
     }
   }
+
+  container?.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) {
+      return;
+    }
+
+    const card = button.closest("[data-uid]");
+    const farmerUid = card?.getAttribute("data-uid");
+    if (!farmerUid) {
+      return;
+    }
+
+    const action = button.getAttribute("data-action");
+    if (action === "view") {
+      window.location.href = `farmer-profile.html?uid=${encodeURIComponent(farmerUid)}`;
+      return;
+    }
+
+    if (action === "invest") {
+      const raw = window.prompt("Enter investment amount in USD:", "1000");
+      if (!raw) {
+        return;
+      }
+
+      const amount = Number(raw);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showToast("Enter a valid investment amount.");
+        return;
+      }
+
+      button.disabled = true;
+      try {
+        await createInvestmentIntent(farmerUid, amount);
+        showToast(`Investment intent created for USD ${amount.toFixed(2)}.`);
+      } catch (error) {
+        showToast(mapFirebaseError(error));
+      } finally {
+        button.disabled = false;
+      }
+    }
+  });
 
   logoutBtn?.addEventListener("click", async () => {
     logoutBtn.disabled = true;
