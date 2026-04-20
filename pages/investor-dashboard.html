@@ -33,7 +33,7 @@
     <section class="dash-grid">
       <article class="card">
         <h3>Portfolio Snapshot</h3>
-        <p>Total Invested: --</p>
+        <p id="investorTotalInvested">Total Invested: USD 0.00</p>
       </article>
       <article class="card">
         <h3>Open Opportunities</h3>
@@ -46,11 +46,164 @@
     </section>
 
     <section class="card" style="margin-top:20px;">
-      <h3>Farmer Profiles Directory</h3>
-      <p id="investorProfileInfo">Loading farmer profiles...</p>
+      <h3>My Investments</h3>
+      <p id="investorIntentsInfo">Loading your investment intents...</p>
+      <div id="investorIntentsList" class="dash-grid"></div>
+    </section>
+
+    <section class="card" style="margin-top:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+          <h3>Farmer Profiles Directory</h3>
+          <p id="investorProfileInfo">Loading farmer profiles...</p>
+        </div>
+        <button id="openPreferencesBtn" class="btn btn-secondary" type="button" style="white-space:nowrap;">
+          ⚙️ Set Preferences
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <div style="margin-bottom:20px; display:flex; gap:10px;">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search by location, crop, or farmer name..."
+          style="flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; font-family:inherit;"
+        />
+        <button id="clearSearchBtn" class="btn btn-ghost" type="button">Clear</button>
+      </div>
+
+      <!-- Active Filters Display -->
+      <div id="activeFiltersDisplay" style="margin-bottom:15px; display:none;">
+        <p style="margin:0 0 8px 0; font-size:12px; color:#666;">Active filters:</p>
+        <div id="filterChips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
       <div id="investorFarmerProfiles" class="dash-grid"></div>
     </section>
   </main>
+
+  <!-- Preferences Modal -->
+  <div id="preferencesModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; overflow-y:auto;">
+    <div style="background:white; margin:40px auto; max-width:500px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:24px;">
+      <h2 style="margin-top:0;">Investment Preferences</h2>
+
+      <!-- Risk Level -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Risk Tolerance</label>
+        <div style="display:flex; gap:8px;">
+          <label style="flex:1; cursor:pointer;">
+            <input type="radio" name="riskLevel" value="low" />
+            Low (Conservative)
+          </label>
+          <label style="flex:1; cursor:pointer;">
+            <input type="radio" name="riskLevel" value="medium" />
+            Medium (Balanced)
+          </label>
+          <label style="flex:1; cursor:pointer;">
+            <input type="radio" name="riskLevel" value="high" />
+            High (Aggressive)
+          </label>
+          <label style="flex:1; cursor:pointer;">
+            <input type="radio" name="riskLevel" value="" checked />
+            All Risks
+          </label>
+        </div>
+      </div>
+
+      <!-- Crop Types -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Preferred Crops</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="wheat" />
+            Wheat
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="rice" />
+            Rice
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="cotton" />
+            Cotton
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="sugarcane" />
+            Sugarcane
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="maize" />
+            Maize
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="crop" value="groundnut" />
+            Groundnut
+          </label>
+        </div>
+      </div>
+
+      <!-- Regions -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Preferred Regions (States)</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="karnataka" />
+            Karnataka
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="telangana" />
+            Telangana
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="maharashtra" />
+            Maharashtra
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="uttar pradesh" />
+            Uttar Pradesh
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="punjab" />
+            Punjab
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="haryana" />
+            Haryana
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="rajasthan" />
+            Rajasthan
+          </label>
+          <label style="cursor:pointer;">
+            <input type="checkbox" name="region" value="gujarat" />
+            Gujarat
+          </label>
+        </div>
+      </div>
+
+      <!-- Investment Amount Range -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block; margin-bottom:8px; font-weight:600; font-size:14px;">Investment Amount Range</label>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <label style="display:flex; flex-direction:column; flex:1;">
+            Min Amount
+            <input type="number" id="minAmount" placeholder="0" min="0" step="1000" style="margin-top:4px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+          </label>
+          <label style="display:flex; flex-direction:column; flex:1;">
+            Max Amount
+            <input type="number" id="maxAmount" placeholder="500000" min="0" step="1000" style="margin-top:4px; padding:8px; border:1px solid #ddd; border-radius:4px;" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button id="applyPreferencesBtn" class="btn btn-primary" type="button" style="flex:1;">Apply Preferences</button>
+        <button id="resetPreferencesBtn" class="btn btn-ghost" type="button" style="flex:1;">Reset All</button>
+        <button id="closePreferencesBtn" class="btn btn-outline" type="button" style="width:auto;">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="../js/investor-dashboard.js"></script>
 </body>
